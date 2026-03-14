@@ -10,10 +10,18 @@ import {
   readGitWorktrees,
   removeWorktree
 } from '../git/worktreeService';
+import { SharedFilesService } from '../shared/sharedFilesService';
 import { ProjectRegistry } from '../state/projectRegistry';
 import { RegisteredRoot } from '../types';
 import { normalizeComparablePath, normalizeFsPath } from '../utils/pathUtils';
-import { MessageItem, ProjectRootItem, TreeNode, WorktreeItem } from './items';
+import {
+  MessageItem,
+  ProjectRootItem,
+  SharedFileItem,
+  SharedFilesGroupItem,
+  TreeNode,
+  WorktreeItem
+} from './items';
 
 function worktreeSortKey(item: WorktreeItem): number {
   // star (main/root) → normal branch → prunable/locked → trash
@@ -52,7 +60,10 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
   readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
-  constructor(private readonly registry: ProjectRegistry) {}
+  constructor(
+    private readonly registry: ProjectRegistry,
+    private readonly sharedFiles: SharedFilesService
+  ) {}
 
   attachTreeView(treeView: vscode.TreeView<TreeNode>): void {
     this.treeView = treeView;
@@ -101,6 +112,10 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
       return this.getWorktreeItems(element.rootPath);
     }
 
+    if (element instanceof SharedFilesGroupItem) {
+      return this.getSharedFileItems(element.rootPath);
+    }
+
     return [];
   }
 
@@ -109,7 +124,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 
   getParent(element: TreeNode): ProjectRootItem | undefined {
-    if (element instanceof WorktreeItem) {
+    if (element instanceof WorktreeItem || element instanceof SharedFilesGroupItem || element instanceof SharedFileItem) {
       return new ProjectRootItem(
         { name: path.basename(element.rootPath) || element.rootPath, rootPath: element.rootPath },
         true
@@ -148,6 +163,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
       return;
     }
 
+    await this.sharedFiles.prepareWorktreeForOpen(item.rootPath, worktreePath);
     await this.openFolder(worktreePath, forceNewWindow);
   }
 
@@ -203,6 +219,34 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
     });
 
     this.refresh();
+  }
+
+  async addSharedFile(item?: ProjectRootItem | SharedFilesGroupItem): Promise<void> {
+    if (await this.sharedFiles.addSharedFile(item?.rootPath)) {
+      this.refresh();
+    }
+  }
+
+  async removeSharedFile(
+    item?: ProjectRootItem | SharedFilesGroupItem | SharedFileItem
+  ): Promise<void> {
+    const rootPath = item?.rootPath;
+    const relativePath = item instanceof SharedFileItem ? item.relativePath : undefined;
+    if (await this.sharedFiles.removeSharedFile(rootPath, relativePath)) {
+      this.refresh();
+    }
+  }
+
+  async changeSharedFilesSyncMode(item?: ProjectRootItem | SharedFilesGroupItem): Promise<void> {
+    if (await this.sharedFiles.changeSyncMode(item?.rootPath)) {
+      this.refresh();
+    }
+  }
+
+  async syncSharedFilesNow(item?: ProjectRootItem | SharedFilesGroupItem): Promise<void> {
+    if (await this.sharedFiles.syncNow(item?.rootPath)) {
+      this.refresh();
+    }
   }
 
   async removeWorktreeFromDialog(item?: WorktreeItem): Promise<void> {
@@ -362,14 +406,21 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
         baseBranch
       });
       this.refresh();
+      const syncedOnCreate = await this.sharedFiles.syncCreatedWorktree(rootPath, worktreePath);
       const action = await vscode.window.showInformationMessage(
         `Worktree created: ${path.basename(worktreePath)}`,
         'Open',
         'Open in New Window'
       );
       if (action === 'Open') {
+        if (!syncedOnCreate) {
+          await this.sharedFiles.prepareWorktreeForOpen(rootPath, worktreePath);
+        }
         await this.openFolder(worktreePath, false);
       } else if (action === 'Open in New Window') {
+        if (!syncedOnCreate) {
+          await this.sharedFiles.prepareWorktreeForOpen(rootPath, worktreePath);
+        }
         await this.openFolder(worktreePath, true);
       }
     } catch (error) {
@@ -412,7 +463,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
       }
 
       const currentFolders = getCurrentWorkspacePaths();
-      const items = worktrees.map((worktree, index) => {
+      const worktreeItems = worktrees.map((worktree, index) => {
         const isRegisteredRoot =
           normalizeComparablePath(worktree.path) === normalizeComparablePath(rootPath);
         const isCurrent = currentFolders.some(
@@ -425,8 +476,17 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
         }, isCurrent);
       });
 
-      items.sort((a, b) => worktreeSortKey(a) - worktreeSortKey(b));
-      return items;
+      worktreeItems.sort((a, b) => worktreeSortKey(a) - worktreeSortKey(b));
+
+      const sharedFilesState = await this.sharedFiles.getViewState(rootPath);
+      const groupItem = new SharedFilesGroupItem(
+        rootPath,
+        sharedFilesState?.sharedFiles ?? [],
+        sharedFilesState?.syncMode ?? 'manual',
+        sharedFilesState?.mainWorktreePath
+      );
+
+      return [groupItem, ...worktreeItems];
     } catch (error) {
       return [
         new MessageItem(
@@ -446,6 +506,23 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
       'vscode.openFolder',
       vscode.Uri.file(folderPath),
       openInNewWindow
+    );
+  }
+
+  private async getSharedFileItems(rootPath: string): Promise<TreeNode[]> {
+    const sharedFilesState = await this.sharedFiles.getViewState(rootPath);
+    if (!sharedFilesState || sharedFilesState.sharedFiles.length === 0) {
+      return [
+        new MessageItem(
+          'No shared files yet',
+          'Add shared files from the main worktree to sync them into other worktrees.',
+          'message'
+        )
+      ];
+    }
+
+    return sharedFilesState.sharedFiles.map(
+      (relativePath) => new SharedFileItem(rootPath, relativePath)
     );
   }
 }

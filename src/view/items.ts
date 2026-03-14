@@ -1,7 +1,7 @@
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { GitWorktreeRecord, RegisteredRoot, WorktreeFlags } from '../types';
+import { GitWorktreeRecord, RegisteredRoot, SharedFilesSyncMode, WorktreeFlags } from '../types';
 
 export class ProjectRootItem extends vscode.TreeItem {
   readonly rootPath: string;
@@ -65,6 +65,48 @@ export class WorktreeItem extends vscode.TreeItem {
   }
 }
 
+export class SharedFilesGroupItem extends vscode.TreeItem {
+  readonly rootPath: string;
+  readonly mainWorktreePath?: string;
+
+  constructor(
+    rootPath: string,
+    sharedFiles: string[],
+    syncMode: SharedFilesSyncMode,
+    mainWorktreePath?: string
+  ) {
+    super(
+      'Shared Files',
+      sharedFiles.length > 0
+        ? vscode.TreeItemCollapsibleState.Collapsed
+        : vscode.TreeItemCollapsibleState.Expanded
+    );
+    this.rootPath = rootPath;
+    this.mainWorktreePath = mainWorktreePath;
+    this.id = `shared-files:${rootPath}`;
+    this.contextValue = 'sharedFilesGroup';
+    this.iconPath = new vscode.ThemeIcon('files', new vscode.ThemeColor('charts.blue'));
+    this.description = `${formatSharedFilesSyncMode(syncMode)} · ${sharedFiles.length} item${sharedFiles.length === 1 ? '' : 's'}`;
+    this.tooltip = buildSharedFilesTooltip(sharedFiles, syncMode, mainWorktreePath);
+  }
+}
+
+export class SharedFileItem extends vscode.TreeItem {
+  readonly rootPath: string;
+  readonly relativePath: string;
+
+  constructor(rootPath: string, relativePath: string) {
+    super(relativePath, vscode.TreeItemCollapsibleState.None);
+    this.rootPath = rootPath;
+    this.relativePath = relativePath;
+    this.id = `shared-file:${rootPath}:${relativePath}`;
+    this.contextValue = 'sharedFile';
+    this.iconPath = new vscode.ThemeIcon('file-code', new vscode.ThemeColor('list.deemphasizedForeground'));
+    this.description = 'sync from main worktree';
+    this.tooltip = `Shared file copied from the main worktree: ${relativePath}`;
+  }
+}
+
 export class MessageItem extends vscode.TreeItem {
   constructor(label: string, description: string, kind: 'message' | 'error') {
     super(label, vscode.TreeItemCollapsibleState.None);
@@ -81,7 +123,7 @@ export class MessageItem extends vscode.TreeItem {
   }
 }
 
-export type TreeNode = ProjectRootItem | WorktreeItem | MessageItem;
+export type TreeNode = ProjectRootItem | WorktreeItem | SharedFilesGroupItem | SharedFileItem | MessageItem;
 
 function shortenPath(fullPath: string): string {
   const home = os.homedir();
@@ -209,4 +251,43 @@ function buildWorktreeTooltip(
   }
 
   return md;
+}
+
+function buildSharedFilesTooltip(
+  sharedFiles: string[],
+  syncMode: SharedFilesSyncMode,
+  mainWorktreePath?: string
+): vscode.MarkdownString {
+  const md = new vscode.MarkdownString('', true);
+  md.supportThemeIcons = true;
+  md.appendMarkdown(`$(files) **Shared Files**\n\n`);
+  md.appendMarkdown(`$(sync) Mode: \`${formatSharedFilesSyncMode(syncMode)}\`\n\n`);
+
+  if (mainWorktreePath) {
+    md.appendMarkdown(`$(star-full) Main worktree: \`${shortenPath(mainWorktreePath)}\`\n\n`);
+  }
+
+  md.appendMarkdown('---\n\n');
+  if (sharedFiles.length === 0) {
+    md.appendMarkdown('_No shared files configured yet._');
+    return md;
+  }
+
+  md.appendMarkdown(sharedFiles.map((sharedFile) => `- \`${sharedFile}\``).join('\n'));
+  return md;
+}
+
+function formatSharedFilesSyncMode(syncMode: SharedFilesSyncMode): string {
+  switch (syncMode) {
+    case 'manual':
+      return 'Manual';
+    case 'onCreate':
+      return 'On Create';
+    case 'onOpen':
+      return 'On Open';
+    case 'onCreateAndOpen':
+      return 'On Create + Open';
+    case 'off':
+      return 'Off';
+  }
 }

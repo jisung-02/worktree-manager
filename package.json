@@ -17,7 +17,12 @@
     "onCommand:worktreeNavigator.refresh",
     "onCommand:worktreeNavigator.openRegistryFile",
     "onCommand:worktreeNavigator.openRoot",
-    "onCommand:worktreeNavigator.openWorktree"
+    "onCommand:worktreeNavigator.openWorktree",
+    "onStartupFinished",
+    "onCommand:worktreeNavigator.addSharedFile",
+    "onCommand:worktreeNavigator.removeSharedFile",
+    "onCommand:worktreeNavigator.syncSharedFiles",
+    "onCommand:worktreeNavigator.setSharedFilesSyncMode"
   ],
   "main": "./out/extension.js",
   "scripts": {
@@ -81,6 +86,26 @@
       {
         "command": "worktreeNavigator.handleRootClick",
         "title": "Worktree Navigator: Handle Root Click"
+      },
+      {
+        "command": "worktreeNavigator.addSharedFile",
+        "title": "Worktree Navigator: Add Shared File",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "worktreeNavigator.removeSharedFile",
+        "title": "Worktree Navigator: Remove Shared File",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "worktreeNavigator.syncSharedFiles",
+        "title": "Worktree Navigator: Sync Shared Files",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "worktreeNavigator.setSharedFilesSyncMode",
+        "title": "Worktree Navigator: Set Shared Files Sync Mode",
+        "icon": "$(settings-gear)"
       }
     ],
     "viewsContainers": {
@@ -179,6 +204,51 @@
           "command": "worktreeNavigator.openWorktreeInNewWindow",
           "when": "view == worktreeNavigator.projects && viewItem == worktree",
           "group": "navigation"
+        },
+        {
+          "command": "worktreeNavigator.addSharedFile",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@5"
+        },
+        {
+          "command": "worktreeNavigator.removeSharedFile",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@6"
+        },
+        {
+          "command": "worktreeNavigator.syncSharedFiles",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@7"
+        },
+        {
+          "command": "worktreeNavigator.setSharedFilesSyncMode",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@8"
+        },
+        {
+          "command": "worktreeNavigator.addSharedFile",
+          "when": "view == worktreeNavigator.projects && viewItem == sharedFilesGroup",
+          "group": "navigation@5"
+        },
+        {
+          "command": "worktreeNavigator.removeSharedFile",
+          "when": "view == worktreeNavigator.projects && viewItem == sharedFilesGroup",
+          "group": "navigation@6"
+        },
+        {
+          "command": "worktreeNavigator.syncSharedFiles",
+          "when": "view == worktreeNavigator.projects && viewItem == sharedFilesGroup",
+          "group": "navigation@7"
+        },
+        {
+          "command": "worktreeNavigator.setSharedFilesSyncMode",
+          "when": "view == worktreeNavigator.projects && viewItem == sharedFilesGroup",
+          "group": "navigation@8"
+        },
+        {
+          "command": "worktreeNavigator.removeSharedFile",
+          "when": "view == worktreeNavigator.projects && viewItem == sharedFile",
+          "group": "inline"
         }
       ]
     },
@@ -206,6 +276,33 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the experimental root double-click heuristic that opens the registered root on the second fast click."
+        },
+        "worktreeNavigator.sharedFiles": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Files relative to the main worktree that should be copied into other worktrees."
+        },
+        "worktreeNavigator.sharedFilesSyncMode": {
+          "type": "string",
+          "default": "manual",
+          "enum": [
+            "manual",
+            "onCreate",
+            "onOpen",
+            "onCreateAndOpen",
+            "off"
+          ],
+          "markdownEnumDescriptions": [
+            "Sync only when you run the manual sync command.",
+            "Sync automatically when a new worktree is created.",
+            "Sync automatically when a worktree is opened or attached to the current window.",
+            "Sync automatically on both worktree creation and opening.",
+            "Disable both automatic and manual shared-file sync."
+          ],
+          "description": "Controls whether registered shared files sync on create, on open, manually, or not at all."
         }
       }
     }

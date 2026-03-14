@@ -17,3 +17,16 @@ export interface WorktreeFlags {
   isRegisteredRoot: boolean;
   isMainWorktree: boolean;
 }
+
+export type SharedFilesSyncMode =
+  | 'manual'
+  | 'onCreate'
+  | 'onOpen'
+  | 'onCreateAndOpen'
+  | 'off';
+
+export interface SharedFilesSettingsSnapshot {
+  sharedFiles: string[];
+  syncMode: SharedFilesSyncMode;
+  mainWorktreePath?: string;
+}
