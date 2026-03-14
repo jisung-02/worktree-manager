@@ -1,0 +1,213 @@
+{
+  "name": "worktree-navigator",
+  "displayName": "Worktree Navigator",
+  "description": "Register project roots and jump between their Git worktrees from a dedicated VS Code sidebar.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "SCM",
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:worktreeNavigator.projects",
+    "onCommand:worktreeNavigator.addRoot",
+    "onCommand:worktreeNavigator.refresh",
+    "onCommand:worktreeNavigator.openRegistryFile",
+    "onCommand:worktreeNavigator.openRoot",
+    "onCommand:worktreeNavigator.openWorktree"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "dev": "tsc -watch -p .",
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.6.3"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "worktreeNavigator.addRoot",
+        "title": "Worktree Navigator: Add Project Root",
+        "icon": "$(add)"
+      },
+      {
+        "command": "worktreeNavigator.refresh",
+        "title": "Worktree Navigator: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "worktreeNavigator.openRegistryFile",
+        "title": "Worktree Navigator: Edit Saved Roots",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "worktreeNavigator.removeRoot",
+        "title": "Worktree Navigator: Remove Project Root",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "worktreeNavigator.openRoot",
+        "title": "Worktree Navigator: Open Project Root"
+      },
+      {
+        "command": "worktreeNavigator.openRootInNewWindow",
+        "title": "Worktree Navigator: Open Project Root in New Window"
+      },
+      {
+        "command": "worktreeNavigator.openWorktree",
+        "title": "Worktree Navigator: Open Worktree"
+      },
+      {
+        "command": "worktreeNavigator.openWorktreeInNewWindow",
+        "title": "Worktree Navigator: Open Worktree in New Window"
+      },
+      {
+        "command": "worktreeNavigator.createWorktree",
+        "title": "Worktree Navigator: Create Worktree",
+        "icon": "$(add)"
+      },
+      {
+        "command": "worktreeNavigator.removeWorktree",
+        "title": "Worktree Navigator: Remove Worktree",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "worktreeNavigator.handleRootClick",
+        "title": "Worktree Navigator: Handle Root Click"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "worktreeNavigator",
+          "title": "Worktrees",
+          "icon": "media/worktree.svg"
+        }
+      ]
+    },
+    "views": {
+      "worktreeNavigator": [
+        {
+          "id": "worktreeNavigator.projects",
+          "name": "Projects & Worktrees"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "worktreeNavigator.projects",
+        "contents": "No project roots registered yet.\n[Add a project root](command:worktreeNavigator.addRoot)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "worktreeNavigator.addRoot",
+          "when": "view == worktreeNavigator.projects",
+          "group": "navigation"
+        },
+        {
+          "command": "worktreeNavigator.refresh",
+          "when": "view == worktreeNavigator.projects",
+          "group": "navigation"
+        },
+        {
+          "command": "worktreeNavigator.openRegistryFile",
+          "when": "view == worktreeNavigator.projects",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "worktreeNavigator.createWorktree",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "inline"
+        },
+        {
+          "command": "worktreeNavigator.openRoot",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@1"
+        },
+        {
+          "command": "worktreeNavigator.openRootInNewWindow",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@2"
+        },
+        {
+          "command": "worktreeNavigator.createWorktree",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@3"
+        },
+        {
+          "command": "worktreeNavigator.removeRoot",
+          "when": "view == worktreeNavigator.projects && viewItem == root",
+          "group": "navigation@4"
+        },
+        {
+          "command": "worktreeNavigator.openRoot",
+          "when": "view == worktreeNavigator.projects && viewItem == directory",
+          "group": "navigation@1"
+        },
+        {
+          "command": "worktreeNavigator.openRootInNewWindow",
+          "when": "view == worktreeNavigator.projects && viewItem == directory",
+          "group": "navigation@2"
+        },
+        {
+          "command": "worktreeNavigator.removeRoot",
+          "when": "view == worktreeNavigator.projects && viewItem == directory",
+          "group": "navigation@3"
+        },
+        {
+          "command": "worktreeNavigator.openWorktree",
+          "when": "view == worktreeNavigator.projects && viewItem == worktree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "worktreeNavigator.removeWorktree",
+          "when": "view == worktreeNavigator.projects && viewItem == worktree",
+          "group": "navigation@3"
+        },
+        {
+          "command": "worktreeNavigator.openWorktreeInNewWindow",
+          "when": "view == worktreeNavigator.projects && viewItem == worktree",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Worktree Navigator",
+      "properties": {
+        "worktreeNavigator.openInNewWindow": {
+          "type": "boolean",
+          "default": false,
+          "description": "Open a selected project root or worktree in a new window instead of reusing the current window."
+        },
+        "worktreeNavigator.doubleClickIntervalMs": {
+          "type": "number",
+          "default": 400,
+          "minimum": 150,
+          "maximum": 1000,
+          "description": "Maximum interval used to treat two root-item clicks as a double click."
+        },
+        "worktreeNavigator.autoRefreshOnWindowFocus": {
+          "type": "boolean",
+          "default": true,
+          "description": "Refresh the tree when the VS Code window regains focus."
+        },
+        "worktreeNavigator.enableRootDoubleClick": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the experimental root double-click heuristic that opens the registered root on the second fast click."
+        }
+      }
+    }
+  }
+}
