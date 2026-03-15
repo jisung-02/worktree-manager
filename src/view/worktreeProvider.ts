@@ -94,14 +94,13 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
       return roots.map((entry) => {
         const isGitRepo = hasGitRepo(entry.rootPath);
         const normalizedRoot = normalizeComparablePath(entry.rootPath);
-        const isCurrent = currentFolders.some(
-          (fp) => {
-            const normalizedFp = normalizeComparablePath(fp);
-            // 정확히 일치하거나, 워크스페이스가 이 root의 하위 디렉터리인 경우
-            return normalizedFp === normalizedRoot
-              || normalizedFp.startsWith(normalizedRoot + path.sep);
-          }
-        );
+        const isCurrent = currentFolders.some((fp) => {
+          const normalizedFp = normalizeComparablePath(fp);
+          // 정확히 일치하거나, 워크스페이스가 이 root의 하위 디렉터리인 경우
+          return (
+            normalizedFp === normalizedRoot || normalizedFp.startsWith(normalizedRoot + path.sep)
+          );
+        });
         return new ProjectRootItem(entry, isGitRepo, isCurrent);
       });
     }
@@ -122,9 +121,16 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 
   getParent(element: TreeNode): ProjectRootItem | undefined {
-    if (element instanceof WorktreeItem || element instanceof SharedFilesGroupItem || element instanceof SharedFileItem) {
+    if (
+      element instanceof WorktreeItem ||
+      element instanceof SharedFilesGroupItem ||
+      element instanceof SharedFileItem
+    ) {
       return new ProjectRootItem(
-        { name: path.basename(element.rootPath) || element.rootPath, rootPath: element.rootPath },
+        {
+          name: path.basename(element.rootPath) || element.rootPath,
+          rootPath: element.rootPath
+        },
         true
       );
     }
@@ -154,10 +160,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
     await this.openFolder(rootPath, forceNewWindow);
   }
 
-  async openWorktree(
-    item: WorktreeItem | undefined,
-    forceNewWindow: boolean
-  ): Promise<void> {
+  async openWorktree(item: WorktreeItem | undefined, forceNewWindow: boolean): Promise<void> {
     const worktreePath = item?.worktreePath;
     if (!worktreePath) {
       return;
@@ -207,9 +210,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
     const normalized = await normalizeFsPath(selected[0].fsPath);
     const roots = await this.getRegisteredRoots();
     if (roots.some((entry) => entry.rootPath === normalized)) {
-      await vscode.window.showInformationMessage(
-        'That project root is already registered.'
-      );
+      await vscode.window.showInformationMessage('That project root is already registered.');
       return;
     }
 
@@ -302,12 +303,21 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
           'Delete Branch',
           'Force Delete Branch'
         );
-        if (deleteBranchAction === 'Delete Branch' || deleteBranchAction === 'Force Delete Branch') {
+        if (
+          deleteBranchAction === 'Delete Branch' ||
+          deleteBranchAction === 'Force Delete Branch'
+        ) {
           try {
-            await deleteBranch(item.rootPath, item.branch, deleteBranchAction === 'Force Delete Branch');
+            await deleteBranch(
+              item.rootPath,
+              item.branch,
+              deleteBranchAction === 'Force Delete Branch'
+            );
             await vscode.window.showInformationMessage(`Branch "${item.branch}" deleted.`);
           } catch (branchError) {
-            await vscode.window.showErrorMessage(`Failed to delete branch: ${formatGitError(branchError)}`);
+            await vscode.window.showErrorMessage(
+              `Failed to delete branch: ${formatGitError(branchError)}`
+            );
           }
         }
       } else {
@@ -326,8 +336,16 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
     const mode = await vscode.window.showQuickPick(
       [
-        { label: '$(add) New Branch', description: 'Create a new branch', value: 'new' as const },
-        { label: '$(git-branch) Existing Branch', description: 'Checkout an existing branch', value: 'existing' as const }
+        {
+          label: '$(add) New Branch',
+          description: 'Create a new branch',
+          value: 'new' as const
+        },
+        {
+          label: '$(git-branch) Existing Branch',
+          description: 'Checkout an existing branch',
+          value: 'existing' as const
+        }
       ],
       { placeHolder: 'Create worktree from...' }
     );
@@ -358,7 +376,9 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
       }
 
       if (items.length === 0) {
-        await vscode.window.showInformationMessage('No available branches. All branches already have worktrees.');
+        await vscode.window.showInformationMessage(
+          'No available branches. All branches already have worktrees.'
+        );
         return;
       }
 
@@ -395,7 +415,9 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
         const bMain = b === 'main' || b === 'master' ? 0 : 1;
         return aMain - bMain;
       });
-      const baseItems: vscode.QuickPickItem[] = sorted.map((b) => ({ label: b }));
+      const baseItems: vscode.QuickPickItem[] = sorted.map((b) => ({
+        label: b
+      }));
       const basePicked = await vscode.window.showQuickPick(baseItems, {
         placeHolder: 'Select base branch (ESC to use HEAD)'
       });
@@ -406,7 +428,10 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
     }
 
     const gitRoot = await findGitRoot(rootPath);
-    const defaultPath = path.join(path.dirname(gitRoot), branch.replace(/^[^/]+\//, '').replace(/\//g, '-'));
+    const defaultPath = path.join(
+      path.dirname(gitRoot),
+      branch.replace(/^[^/]+\//, '').replace(/\//g, '-')
+    );
     const worktreePath = await vscode.window.showInputBox({
       prompt: 'Worktree directory path',
       value: defaultPath,
@@ -453,9 +478,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 
   getConfig<K extends ConfigurationKey>(key: K): ConfigurationMap[K] | undefined {
-    return vscode.workspace
-      .getConfiguration('worktreeNavigator')
-      .get<ConfigurationMap[K]>(key);
+    return vscode.workspace.getConfiguration('worktreeNavigator').get<ConfigurationMap[K]>(key);
   }
 
   private async getRegisteredRoots(): Promise<RegisteredRoot[]> {
@@ -478,8 +501,9 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
       try {
         const worktrees = await readCachedGitWorktrees(root.rootPath);
         if (
-          worktrees.some((worktree) =>
-            normalizeComparablePath(worktree.path) === normalizeComparablePath(workspacePath)
+          worktrees.some(
+            (worktree) =>
+              normalizeComparablePath(worktree.path) === normalizeComparablePath(workspacePath)
           )
         ) {
           return root.rootPath;
@@ -514,11 +538,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
         : await readCachedGitWorktrees(rootPath);
       if (worktrees.length === 0) {
         return [
-          new MessageItem(
-            'No worktrees found',
-            'Git returned no worktree entries.',
-            'message'
-          )
+          new MessageItem('No worktrees found', 'Git returned no worktree entries.', 'message')
         ];
       }
 
@@ -530,10 +550,15 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
           (fp) => normalizeComparablePath(fp) === normalizeComparablePath(worktree.path)
         );
 
-        return new WorktreeItem(rootPath, worktree, {
-          isRegisteredRoot,
-          isMainWorktree: index === 0
-        }, isCurrent);
+        return new WorktreeItem(
+          rootPath,
+          worktree,
+          {
+            isRegisteredRoot,
+            isMainWorktree: index === 0
+          },
+          isCurrent
+        );
       });
 
       worktreeItems.sort((a, b) => worktreeSortKey(a) - worktreeSortKey(b));
@@ -548,13 +573,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
       return [groupItem, ...worktreeItems];
     } catch (error) {
-      return [
-        new MessageItem(
-          'Git worktrees unavailable',
-          formatGitError(error),
-          'error'
-        )
-      ];
+      return [new MessageItem('Git worktrees unavailable', formatGitError(error), 'error')];
     }
   }
 
@@ -582,8 +601,7 @@ export class WorktreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 
   private async openFolder(folderPath: string, forceNewWindow: boolean): Promise<void> {
-    const openInNewWindow =
-      forceNewWindow || Boolean(this.getConfig('openInNewWindow'));
+    const openInNewWindow = forceNewWindow || Boolean(this.getConfig('openInNewWindow'));
 
     await vscode.commands.executeCommand(
       'vscode.openFolder',

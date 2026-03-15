@@ -47,9 +47,8 @@ export class SharedFilesService {
     }
 
     const snapshot = await this.readSharedSettingsFromMainWorktree(matched.mainWorktreePath);
-    const isCurrentWorkspaceMain = getCurrentWorkspacePaths().some(
-      (workspacePath) =>
-        areSamePath(workspacePath, matched.mainWorktreePath as string)
+    const isCurrentWorkspaceMain = getCurrentWorkspacePaths().some((workspacePath) =>
+      areSamePath(workspacePath, matched.mainWorktreePath as string)
     );
 
     return {
@@ -101,8 +100,8 @@ export class SharedFilesService {
     }
 
     const targetPath =
-      relativePath
-      ?? (
+      relativePath ??
+      (
         await vscode.window.showQuickPick(
           currentFiles.map((filePath) => ({ label: filePath })),
           { placeHolder: 'Select a shared file to remove' }
@@ -184,14 +183,16 @@ export class SharedFilesService {
 
     const currentWorkspacePath = getPrimaryWorkspacePath();
     const currentBelongsToRoot =
-      currentWorkspacePath
-      && resolved.worktreePaths.some((worktreePath) => areSamePath(worktreePath, currentWorkspacePath));
+      currentWorkspacePath &&
+      resolved.worktreePaths.some((worktreePath) =>
+        areSamePath(worktreePath, currentWorkspacePath)
+      );
 
     let targetPath: string | undefined;
     if (
-      currentBelongsToRoot
-      && currentWorkspacePath
-      && !areSamePath(currentWorkspacePath, resolved.mainWorktreePath)
+      currentBelongsToRoot &&
+      currentWorkspacePath &&
+      !areSamePath(currentWorkspacePath, resolved.mainWorktreePath)
     ) {
       targetPath = currentWorkspacePath;
     } else {
@@ -303,7 +304,11 @@ export class SharedFilesService {
   private async syncWorktree(
     rootPath: string,
     targetWorktreePath: string,
-    options: { reason: string; trigger?: SharedFilesSyncTrigger; respectMode: boolean }
+    options: {
+      reason: string;
+      trigger?: SharedFilesSyncTrigger;
+      respectMode: boolean;
+    }
   ): Promise<SharedSyncResult | undefined> {
     const matched = await this.loadRootContext(rootPath);
     if (!matched?.mainWorktreePath) {
@@ -316,9 +321,9 @@ export class SharedFilesService {
 
     const snapshot = await this.readSharedSettingsFromMainWorktree(matched.mainWorktreePath);
     if (
-      options.respectMode
-      && options.trigger
-      && !shouldSyncForTrigger(snapshot.syncMode, options.trigger)
+      options.respectMode &&
+      options.trigger &&
+      !shouldSyncForTrigger(snapshot.syncMode, options.trigger)
     ) {
       return undefined;
     }
@@ -371,10 +376,9 @@ export class SharedFilesService {
     }
 
     const targetName = path.basename(targetWorktreePath) || targetWorktreePath;
-    const summary = [
-      `${result.copied.length} copied`,
-      `${result.warnings.length} warnings`
-    ].join(' · ');
+    const summary = [`${result.copied.length} copied`, `${result.warnings.length} warnings`].join(
+      ' · '
+    );
 
     if (result.warnings.length > 0) {
       const detail = result.warnings
@@ -394,11 +398,14 @@ export class SharedFilesService {
     }
   }
 
-  private async resolveEditableRoot(rootPath?: string): Promise<{
-    rootPath: string;
-    mainWorktreePath: string;
-    snapshot: SharedFilesSettingsSnapshot;
-  } | undefined> {
+  private async resolveEditableRoot(rootPath?: string): Promise<
+    | {
+        rootPath: string;
+        mainWorktreePath: string;
+        snapshot: SharedFilesSettingsSnapshot;
+      }
+    | undefined
+  > {
     const resolved = await this.resolveRootForCommand(rootPath);
     if (!resolved?.mainWorktreePath) {
       return undefined;
@@ -425,7 +432,9 @@ export class SharedFilesService {
     return this.matchRootForWorkspacePath(workspacePath);
   }
 
-  private async matchRootForWorkspacePath(workspacePath: string): Promise<MatchedRootContext | undefined> {
+  private async matchRootForWorkspacePath(
+    workspacePath: string
+  ): Promise<MatchedRootContext | undefined> {
     const roots = await this.registry.list();
     for (const root of roots) {
       const matched = await this.loadRootContext(root.rootPath);
@@ -490,18 +499,14 @@ export class SharedFilesService {
     }
 
     await fs.mkdir(path.dirname(settingsPath), { recursive: true });
-    await fs.writeFile(
-      settingsPath,
-      `${JSON.stringify(next, null, 2)}${current.eol}`,
-      'utf8'
-    );
+    await fs.writeFile(settingsPath, `${JSON.stringify(next, null, 2)}${current.eol}`, 'utf8');
   }
 
   private async readWritableMainWorktreeSettings(settingsPath: string): Promise<{
     parsed: Record<string, unknown>;
     eol: string;
   }> {
-    let raw = '';
+    let raw: string;
     try {
       raw = await fs.readFile(settingsPath, 'utf8');
     } catch (error) {
@@ -527,7 +532,8 @@ export class SharedFilesService {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown parse error';
       throw new Error(
-        `Could not update ${settingsPath} because it is not valid JSON/JSONC: ${message}`
+        `Could not update ${settingsPath} because it is not valid JSON/JSONC: ${message}`,
+        { cause: error }
       );
     }
   }
@@ -587,9 +593,7 @@ export class SharedFilesService {
 
     for (const entry of entries) {
       const relativePath = normalizeRelativeSharedFilePath(
-        currentRelativePath
-          ? path.join(currentRelativePath, entry.name)
-          : entry.name
+        currentRelativePath ? path.join(currentRelativePath, entry.name) : entry.name
       );
 
       if (entry.isDirectory()) {
@@ -623,9 +627,9 @@ export class SharedFilesService {
 
       for (const relativePath of relativePaths) {
         if (
-          lines.includes(relativePath)
-          || lines.includes(`/${relativePath}`)
-          || lines.includes(path.basename(relativePath))
+          lines.includes(relativePath) ||
+          lines.includes(`/${relativePath}`) ||
+          lines.includes(path.basename(relativePath))
         ) {
           missingEntries.delete(relativePath);
         }
@@ -758,10 +762,7 @@ function normalizeRelativeSharedFilePath(value: string): string {
 
 function isSharedFilesSyncMode(value: unknown): value is SharedFilesSyncMode {
   return (
-    value === 'manual'
-    || value === 'onCreate'
-    || value === 'onCreateAndOpen'
-    || value === 'off'
+    value === 'manual' || value === 'onCreate' || value === 'onCreateAndOpen' || value === 'off'
   );
 }
 
@@ -784,9 +785,7 @@ function normalizeSharedFilesSyncMode(value: unknown): SharedFilesSyncMode {
     return 'onCreateAndOpen';
   }
 
-  return isSharedFilesSyncMode(value)
-    ? value
-    : DEFAULT_SYNC_MODE;
+  return isSharedFilesSyncMode(value) ? value : DEFAULT_SYNC_MODE;
 }
 
 function toSyncModeLabel(syncMode: SharedFilesSyncMode): string {

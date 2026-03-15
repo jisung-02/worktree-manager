@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { getCurrentBranch, isGitWorktreeDir, parseWorktreePorcelain } from './git/worktreeService';
+import { getCurrentBranch, parseWorktreePorcelain } from './git/worktreeService';
 import { SharedFilesService } from './shared/sharedFilesService';
 import { ProjectRegistry } from './state/projectRegistry';
 import {
@@ -167,7 +167,8 @@ async function updateWorktreeWindowTitle(): Promise<void> {
   const customName = `${parentDir}/${currentDir} (${branch})`;
 
   const config = vscode.workspace.getConfiguration('window');
-  const defaultTitle = '${dirty}${activeEditorShort}${separator}${rootName}${separator}${profileName}${separator}${appName}';
+  const defaultTitle =
+    '${dirty}${activeEditorShort}${separator}${rootName}${separator}${profileName}${separator}${appName}';
   const newTitle = defaultTitle.replace('${rootName}', customName);
 
   await config.update('title', newTitle, vscode.ConfigurationTarget.Workspace);

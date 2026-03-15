@@ -56,14 +56,10 @@ export async function getGitCommonDir(repoPath: string): Promise<string> {
     return cached;
   }
 
-  const { stdout } = await execFileAsync(
-    'git',
-    ['-C', gitRoot, 'rev-parse', '--git-common-dir'],
-    {
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024
-    }
-  );
+  const { stdout } = await execFileAsync('git', ['-C', gitRoot, 'rev-parse', '--git-common-dir'], {
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024
+  });
 
   const resolved = resolveGitPath(gitRoot, stdout.trim());
   gitCommonDirCache.set(gitRoot, resolved);
@@ -219,7 +215,9 @@ export interface CreateWorktreeOptions {
   baseBranch?: string;
 }
 
-export async function listBranches(repoPath: string): Promise<{ local: string[]; remote: string[] }> {
+export async function listBranches(
+  repoPath: string
+): Promise<{ local: string[]; remote: string[] }> {
   const gitRoot = await findGitRoot(repoPath);
 
   const [localResult, remoteResult] = await Promise.all([
@@ -262,7 +260,11 @@ export async function createWorktree(options: CreateWorktreeOptions): Promise<vo
   invalidateGitWorktreeCache();
 }
 
-export async function removeWorktree(repoPath: string, worktreePath: string, force: boolean): Promise<void> {
+export async function removeWorktree(
+  repoPath: string,
+  worktreePath: string,
+  force: boolean
+): Promise<void> {
   const gitRoot = await findGitRoot(repoPath);
   const args = ['-C', gitRoot, 'worktree', 'remove', ...(force ? ['--force'] : []), worktreePath];
 
@@ -276,7 +278,11 @@ export async function removeWorktree(repoPath: string, worktreePath: string, for
   invalidateGitWorktreeCache();
 }
 
-export async function deleteBranch(repoPath: string, branch: string, force: boolean): Promise<void> {
+export async function deleteBranch(
+  repoPath: string,
+  branch: string,
+  force: boolean
+): Promise<void> {
   const gitRoot = await findGitRoot(repoPath);
   const flag = force ? '-D' : '-d';
   await execFileAsync('git', ['-C', gitRoot, 'branch', flag, branch], {
@@ -311,12 +317,7 @@ export function isGitWorktreeDir(dirPath: string): boolean {
 }
 
 export function formatGitError(error: unknown): string {
-  if (
-    error &&
-    typeof error === 'object' &&
-    'stderr' in error &&
-    typeof error.stderr === 'string'
-  ) {
+  if (error && typeof error === 'object' && 'stderr' in error && typeof error.stderr === 'string') {
     return error.stderr.trim() || 'Git command failed.';
   }
 
@@ -332,7 +333,5 @@ function resolveGitPath(gitRoot: string, gitPath: string): string {
     return gitRoot;
   }
 
-  return path.isAbsolute(gitPath)
-    ? gitPath
-    : path.resolve(gitRoot, gitPath);
+  return path.isAbsolute(gitPath) ? gitPath : path.resolve(gitRoot, gitPath);
 }

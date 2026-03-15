@@ -10,9 +10,7 @@ export class ProjectRootItem extends vscode.TreeItem {
   constructor(entry: RegisteredRoot, isGitRepo: boolean, isCurrent: boolean = false) {
     super(
       entry.name,
-      isGitRepo
-        ? vscode.TreeItemCollapsibleState.Collapsed
-        : vscode.TreeItemCollapsibleState.None
+      isGitRepo ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
     );
     this.rootPath = entry.rootPath;
     this.isGitRepo = isGitRepo;
@@ -25,9 +23,7 @@ export class ProjectRootItem extends vscode.TreeItem {
     this.tooltip = buildRootTooltip(entry, isGitRepo, isCurrent);
     this.iconPath = getProjectRootIconPath();
     this.command = {
-      command: isGitRepo
-        ? 'worktreeNavigator.handleRootClick'
-        : 'worktreeNavigator.openRoot',
+      command: isGitRepo ? 'worktreeNavigator.handleRootClick' : 'worktreeNavigator.openRoot',
       title: isGitRepo ? 'Expand or Open Project Root' : 'Open Directory',
       arguments: [this]
     };
@@ -40,7 +36,12 @@ export class WorktreeItem extends vscode.TreeItem {
   readonly branch?: string;
   readonly sortRank: number;
 
-  constructor(rootPath: string, worktree: GitWorktreeRecord, flags: WorktreeFlags, isCurrent: boolean = false) {
+  constructor(
+    rootPath: string,
+    worktree: GitWorktreeRecord,
+    flags: WorktreeFlags,
+    isCurrent: boolean = false
+  ) {
     const label = path.basename(worktree.path) || worktree.path;
     super(label, vscode.TreeItemCollapsibleState.None);
     this.rootPath = rootPath;
@@ -101,7 +102,10 @@ export class SharedFileItem extends vscode.TreeItem {
     this.relativePath = relativePath;
     this.id = `shared-file:${rootPath}:${relativePath}`;
     this.contextValue = 'sharedFile';
-    this.iconPath = new vscode.ThemeIcon('file-code', new vscode.ThemeColor('list.deemphasizedForeground'));
+    this.iconPath = new vscode.ThemeIcon(
+      'file-code',
+      new vscode.ThemeColor('list.deemphasizedForeground')
+    );
     this.description = 'sync from main worktree';
     this.tooltip = `Shared file copied from the main worktree: ${relativePath}`;
   }
@@ -123,7 +127,12 @@ export class MessageItem extends vscode.TreeItem {
   }
 }
 
-export type TreeNode = ProjectRootItem | WorktreeItem | SharedFilesGroupItem | SharedFileItem | MessageItem;
+export type TreeNode =
+  | ProjectRootItem
+  | WorktreeItem
+  | SharedFilesGroupItem
+  | SharedFileItem
+  | MessageItem;
 
 function getProjectRootIconPath(): vscode.Uri {
   return vscode.Uri.file(path.resolve(__dirname, '../../media/directory.svg'));
@@ -137,10 +146,7 @@ function shortenPath(fullPath: string): string {
   return fullPath;
 }
 
-function pickWorktreeIcon(
-  worktree: GitWorktreeRecord,
-  flags: WorktreeFlags
-): vscode.ThemeIcon {
+function pickWorktreeIcon(worktree: GitWorktreeRecord, flags: WorktreeFlags): vscode.ThemeIcon {
   if (worktree.locked) {
     return new vscode.ThemeIcon('lock', new vscode.ThemeColor('list.warningForeground'));
   }
@@ -191,7 +197,11 @@ function describeWorktree(worktree: GitWorktreeRecord, flags: WorktreeFlags): st
   return parts.join('  ');
 }
 
-function buildRootTooltip(entry: RegisteredRoot, isGitRepo: boolean, isCurrent: boolean = false): vscode.MarkdownString {
+function buildRootTooltip(
+  entry: RegisteredRoot,
+  isGitRepo: boolean,
+  isCurrent: boolean = false
+): vscode.MarkdownString {
   const md = new vscode.MarkdownString('', true);
   md.supportThemeIcons = true;
   const icon = isGitRepo ? '$(repo)' : '$(folder)';
@@ -294,10 +304,7 @@ function formatSharedFilesSyncMode(syncMode: SharedFilesSyncMode): string {
   }
 }
 
-function getWorktreeSortRank(
-  worktree: GitWorktreeRecord,
-  flags: WorktreeFlags
-): number {
+function getWorktreeSortRank(worktree: GitWorktreeRecord, flags: WorktreeFlags): number {
   if (flags.isMainWorktree) {
     return 0;
   }
